@@ -2,6 +2,18 @@
 
 <script type="text/javascript">//<![CDATA[
 
+	String.prototype.replaceAll = function(search, replacement) {
+	    var target = this;
+	    return target.replace(new RegExp(search, 'g'), replacement);
+	};
+
+	function changePath(e) {		
+		var path = document.getElementById("currentpath").value;
+		path = path.replace("//", "/")
+		document.getElementById("currentpath").value = path;
+		openpath(null, path);
+	}
+
 	function gotopath(obj, isBack, event){
 		isBack = isBack || false;
 		if (typeof event !== "undefined") {
@@ -11,14 +23,37 @@
 				parentFolder = obj.value;		    	
 		    }
 		}
+		//document.getElementById("currentpath").value = obj.getAttribute("data-path");	
 		var parentFolder = (document.getElementById("currentpath").value === "/") ? "" : document.getElementById("currentpath").value;
-		var path = ((!isBack) ? parentFolder+"/" : "")+obj.getAttribute("data-path");
+		var path = ((!isBack) ? parentFolder+"/" : "")+obj.getAttribute("data-path")
+	
+		path = path.replace("//", "/");
+		
 		update_list(path);
 	}
 
 	var iwxhr = new XHR();
 
-	function update_list(path) {
+	function openpath(obj, path) {
+		var filename = null;
+		if (path) {
+			var pathspl = path.split('/');
+			if (pathspl.length) {
+				filename = pathspl[pathspl.length-2];
+			}
+		}
+		path = path || obj.getAttribute("data-path").replaceAll(' ', '\\ ');
+		filename = filename || obj.getAttribute("data-filename");
+		
+		iwxhr.get('<%=luci.dispatcher.build_url("admin", "system", "filebrowser_open")%>', {
+			path:path,
+			filename:filename,
+		},function(x, ifc){
+				console.dir(ifc);
+		});
+	}
+
+	function update_list(path) {		
 		path = path || "/";
 		
 		iwxhr.get('<%=luci.dispatcher.build_url("admin", "system", "filebrowser_list")%>', {path:path},
@@ -30,7 +65,7 @@
 
 				var listFiles="<table class='cbi-section-table'><tbody>";
 				if (path !== "/") {
-					listFiles+="<tr><td onclick=\"gotopath(this, true)\" data-path='"+parentFolder+"'>..</td><td></td><td></td><td></td></td><td></td><td></td></tr>";
+					listFiles+="<tr><td colspan=\"5\" onclick=\"gotopath(this, true)\" data-path='"+parentFolder+"'>..</td></tr>";
 				}
 				if (filenames != null) {
 					for (i = 0; i < filenames.length; i++) {
@@ -39,29 +74,43 @@
 							var f = line.match(/(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\S\s]+)/);
 							var o = {
 								filename: f[9],
+								fullpath : path+'/'+f[9],
 								perms: f[1],
 								isDir: (f[1][0] === 'd'),
 								isLink: (f[1][0] === 'l'),
+								isFile: (f[1][0] !== 'd' && f[1][0] !== 'l'),
 								res: (f[1][0] === 'l')? (f[9]).split(' -> ')[1] : f[9],
 								date: f[7]+' '+f[6]+' '+f[8],
 								size:f[5],
 								owner: f[3],
+								icon: (f[1][0] === 'd') ? "folder.gif" : ((f[1][0] === 'l')? "link.gif" : "file.gif"),
+								onclick: (f[1][0] === 'd') ? "gotopath(this)" : "openpath(this)",
+								encoded_path: encodeURIComponent((path+'/'+f[9]).replaceAll('/', '<>')),
+								encoded_filename: encodeURIComponent((f[9]).replaceAll('/', '<>')),
 							};
-							var icon = '<img src="/luci-static/resources/cbi/'+((o.isDir)? "folder.gif" : ((o.isLink)? "link.gif" : "file.gif"))+'">';
-							listFiles += "<tr>"+
-								"<td style='width:50%;' onclick='gotopath(this)' data-path=\""+o.res+"\">"+icon+"<strong>"+o.filename+"</strong><td>"+
-								"<td style='text-align:right;'>"+o.owner+"</td>"+
-								"<td style='text-align:right;'>"+o.date+"</td>"+
-								"<td style='text-align:right;'>"+o.size+"</td>"+
-								"<td style='text-align:right;'>"+o.perms+"</td>"+
-								"</tr>";
+							var icon = '<img src="/luci-static/resources/cbi/'+o.icon+'">';
+
+							listFiles += '<tr>'+
+								'<td style="width:50%;" onclick="'+o.onclick+'" '+
+									'data-path="'+((o.isDir) ? o.res : o.fullpath)+'" '+
+									'data-filename="'+o.filename+'" >'+
+									icon+
+									((o.isFile) ? '<a href="<%=luci.dispatcher.build_url("admin", "system", "filebrowser_open")%>/'+o.encoded_path+'/'+o.encoded_filename+'" target="_blank"><strong style="color:#404040;">'+o.filename+'</strong></a>'
+									: '<strong style="color:#404040;">'+o.filename+'</strong>')+
+								'</td>'+
+								'<td style="text-align:right;">'+o.owner+'</td>'+
+								'<td style="text-align:right;">'+o.date+'</td>'+
+								'<td style="text-align:right;">'+o.size+'</td>'+
+								'<td style="text-align:right;">'+o.perms+'</td>'+
+								'</tr>';
 						}
 					}					
 				}
 				listFiles += "</table>";
 				document.getElementById("list").innerHTML=listFiles;
 			}
-		);
+		)
+		window.history.pushState(null, null, '?path='+path+'');
 		document.getElementById("currentpath").value = (path === "") ? "" : path;
 		return false;
 	};
@@ -81,11 +130,17 @@ table tr td:hover {
 </style>
 
 <h2><a id="content" name="content">File browser</a></h2>
-<input type="text" id="currentpath" onkeypress="gotopath(this)" style="width:100%;" value="/"/>
+<input type="text" id="currentpath" onkeypress="changePath()" style="width:100%;" value="/"/>
 <div><p><strong>Files list:</strong></p></div>
 <div id="list"></div>
 <script>
-update_list(null);
+var path = null;
+if (location.search) {
+	var params = (location.search).split('=');
+	if (params.length > 0) {
+		path = decodeURIComponent((params[1]).replace("\"", ""));
+	}
+}
+update_list(path);
 </script>
-
 <%+footer%>
