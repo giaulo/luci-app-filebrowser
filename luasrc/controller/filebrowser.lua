@@ -30,14 +30,6 @@ function filebrowser_list()
 
 end
 
-function hex_to_char(x)
-  return string.char(tonumber(x, 16))
-end
-
-function unescape(url)
-  return url:gsub("%%(%x%x)", hex_to_char)
-end
-
 function filebrowser_open(file, filename)
 	file = file:gsub("<>", "/")
 
