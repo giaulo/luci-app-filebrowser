@@ -12,6 +12,12 @@ function index()
 	page = entry({"admin", "system", "filebrowser_open"}, call("filebrowser_open"), nil)
 	page.leaf = true
 
+    page = entry({"admin", "system", "filebrowser_delete"}, call("filebrowser_delete"), nil)
+    page.leaf = true
+
+    page = entry({"admin", "system", "filebrowser_rename"}, call("filebrowser_rename"), nil)
+    page.leaf = true
+
 end
 
 function filebrowser_list()
@@ -43,6 +49,26 @@ function filebrowser_open(file, filename)
 	luci.http.header('Content-Disposition', 'inline; filename="'..filename..'"' )
 	luci.http.prepare_content(mime or "application/octet-stream")
 	luci.ltn12.pump.all(luci.ltn12.source.file(download_fpi), luci.http.write)
+end
+
+function filebrowser_delete()
+    local path = luci.http.formvalue("path")
+    local isdir = luci.http.formvalue("isdir")
+    path = path:gsub("<>", "/")
+    path = path:gsub(" ", "\ ")
+    if isdir then
+        local success = os.execute('rm -r "'..path..'"')
+    else
+        local success = os.remove(path)
+    end
+    return success
+end
+
+function filebrowser_rename()
+    local filepath = luci.http.formvalue("filepath")
+    local newpath = luci.http.formvalue("newpath")
+    local success = os.execute('mv "'..filepath..'" "'..newpath..'"')
+    return success
 end
 
 function scandir(directory)

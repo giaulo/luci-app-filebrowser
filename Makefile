@@ -9,7 +9,7 @@ luci-app-filebrowser.ipk:
 	tar czvf control.tar.gz control
 	cd ipk; tar czvf ../data.tar.gz .; cd ..
 	echo 2.0 > debian-binary
-	ar r luci-app-filebrowser.ipk control.tar.gz data.tar.gz  debian-binary
+	ar r luci-app-filebrowser_`date +%Y%m%d`.ipk control.tar.gz data.tar.gz  debian-binary
 
 clean:
 	rm -rf ipk
