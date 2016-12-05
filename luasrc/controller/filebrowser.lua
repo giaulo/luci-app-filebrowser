@@ -24,8 +24,7 @@ function filebrowser_list()
 	local fs = require "nixio.fs"
 	local rv = { }
 	local path = luci.http.formvalue("path")
-	
-    path = path:gsub(" ", "\\ ")
+
     rv = scandir(path)	
 
 	if #rv > 0 then
@@ -75,7 +74,7 @@ function scandir(directory)
     local http = require "luci.http"
     local i, t, popen = 0, {}, io.popen
     
-    local pfile = popen("ls -l "..directory.." | egrep '^d' ; ls -lh "..directory.." | egrep -v '^d'")
+    local pfile = popen("ls -l \""..directory.."\" | egrep '^d' ; ls -lh \""..directory.."\" | egrep -v '^d'")
     for filename in pfile:lines() do
         i = i + 1
         t[i] = filename
