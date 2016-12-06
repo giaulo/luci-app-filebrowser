@@ -128,12 +128,12 @@
 									((o.isFile) ? '<a href="'+o.openLink+'" target="_blank"><strong style="color:#404040;">'+o.filename+'</strong></a>'
 									: '<strong style="color:#404040;">'+o.filename+'</strong>')+
                                     '</div>'+
-                                '<div class="file-ops">'+o.renameLink+o.removeLink+'</div>'+
+                                    '<div class="file-ops">'+o.renameLink+o.removeLink+'</div>'+
 								'</td>'+
-								'<td style="text-align:right;">'+o.owner+'</td>'+
-								'<td style="text-align:right;">'+o.date+'</td>'+
-								'<td style="text-align:right;">'+o.size+'</td>'+
-								'<td style="text-align:right;">'+o.perms+'</td>'+
+								'<td class="owner-cell" style="text-align:right;">'+o.owner+'</td>'+
+								'<td class="date-cell" style="text-align:right;">'+o.date+'</td>'+
+								'<td class="size-cell" style="text-align:right;">'+o.size+'</td>'+
+								'<td class="perms-cell" style="text-align:right;">'+o.perms+'</td>'+
                             '</tr>';
 						}
 					}					
@@ -177,7 +177,6 @@ table tr td:hover .show-on-hover {
 .file-op {
     display: inline;
 }
-
 .file-icon, .folder-icon, .link-icon {
     position: relative;
     padding-left: 16px;
@@ -199,6 +198,12 @@ table tr td:hover .show-on-hover {
 }
 .link-icon:before {
     background-image: url('data:image/gif;base64,R0lGODlhEAAQAMQfAJfL/HKQruzx9uXt9YmwytXb5Mfj/r3e/VdwkUlVa/L2+qvU+2Sd4bXZ/KPQ+4m77FJhe6/S5Gmg4kNLXNXn8GCa4ZrA1qjL3t7n7ykxQz5FVeLp8HyhvcvM0f///////yH5BAEAAB8ALAAAAAAQABAAAAWUoCeO5PidHhVFl2URBMcFgYdG1CDo++A/CJsnMjAYjYek4gEUXRRHQ1KpUEBEFqhRMm14rVithHvwNhZgDwE6ZrgrlQU6IVofJG4GPO4Y0D0cAkluZwsOhwMTIoFJDXGGhwAbih4Bgl5ykAAAGBoiAQplhZGbAp4eCAUKPRutGxgCHRmfCLUQEAkJExMaGhlXJcElIQA7');
+}
+
+@media (max-width: 767px) {
+    .perms-cell, .owner-cell, .size-cell, .date-cell {
+        display: none;
+    }
 }
 
 </style>
