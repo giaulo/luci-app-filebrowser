@@ -146,8 +146,11 @@
 		)
 		window.history.pushState(null, null, '?path='+path+'');
 		document.getElementById("currentpath").value = (path === "") ? "" : path;
+        document.getElementById("upload-dir").value = ((path === "") ? "" : path)+"/";
 		return false;
 	};
+
+
 //]]></script>
 
 <style>
@@ -210,16 +213,53 @@ table tr td:hover .show-on-hover {
 
 <h2><a id="content" name="content">File browser</a></h2>
 <input type="text" id="currentpath" onkeypress="changePath()" style="width:100%;" value="/"/>
-<div><p><strong>Files list:</strong></p></div>
+<div style="padding-bottom: 15px;">
+    <span><strong>Files list:</strong></span>
+    <a id="upload-toggle" href="#" class="pull-right">Upload file</a>
+</div>
+<div id="upload-container" style="display:none; padding: 15px 0;">
+    <form method="post" action="<%=luci.dispatcher.build_url('admin', 'system', 'filebrowser_upload')%>" enctype="multipart/form-data">
+        <input id="upload-dir" type="hidden" name="upload-dir" value="" />
+        <input id="upload-filename" type="hidden" name="upload-filename" value="" />
+        <input id="upload-file" name="upload-file" type="file" style="width: calc(100% - 90px) !important; border:1px solid #eee;" />
+        <button type="submit" class="cbi-button cbi-input-apply pull-right" style="padding-left:22px;">Upload</button>
+    </form>
+</div>
 <div id="list"></div>
 <script>
-var path = null;
-if (location.search) {
-	var params = (location.search).split('=');
-	if (params.length > 0) {
-		path = decodeURIComponent((params[1]).replace("\"", ""));
-	}
-}
+    var uploadToggle = document.getElementById('upload-toggle');
+    uploadToggle.onclick = function() {
+        var div = document.getElementById('upload-container');
+        if (div.style.display !== 'none') {
+            div.style.display = 'none';
+        }
+        else {
+            div.style.display = 'block';
+        }
+    };
+
+    var path = null;
+    if (location.search) {
+        var params = (location.search).split('=');
+        if (params.length > 0) {
+            path = decodeURIComponent((params[1]).replace("\"", ""));
+        }
+    }
+
+    var uploadinput = document.getElementById('upload-file');
+    var uploadinputfilename = document.getElementById('upload-filename');
+    uploadinput.addEventListener('change', function()
+    {
+        var fullPath = uploadinput.value;
+        if (fullPath) {
+            var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
+            var filename = fullPath.substring(startIndex);
+            if (filename.indexOf('\\') === 0 || filename.indexOf('/') === 0) {
+                filename = filename.substring(1);
+            }
+            uploadinputfilename.value = filename;
+        }
+    });
 update_list(path);
 </script>
 <%+footer%>

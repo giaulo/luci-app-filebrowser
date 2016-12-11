@@ -18,10 +18,12 @@ function index()
     page = entry({"admin", "system", "filebrowser_rename"}, call("filebrowser_rename"), nil)
     page.leaf = true
 
+    page = entry({"admin", "system", "filebrowser_upload"}, call("filebrowser_upload"), nil)
+    page.leaf = true
+
 end
 
 function filebrowser_list()
-	local fs = require "nixio.fs"
 	local rv = { }
 	local path = luci.http.formvalue("path")
 
@@ -39,9 +41,6 @@ function filebrowser_open(file, filename)
 	file = file:gsub("<>", "/")
 
 	local io = require "io"
-	local fs = require "nixio.fs"
-	local http = require "luci.http"
-	local ltn12 = require "luci.ltn12"
 	local mime = to_mime(filename)
 
 	local download_fpi = io.open(file, "r")
@@ -70,8 +69,42 @@ function filebrowser_rename()
     return success
 end
 
+function filebrowser_upload()
+    local filecontent = luci.http.formvalue("upload-file")
+    local filename = luci.http.formvalue("upload-filename")
+    local uploaddir = luci.http.formvalue("upload-dir")
+    local filepath = uploaddir..filename
+    local url = luci.dispatcher.build_url('admin', 'system', 'filebrowser')
+
+    local fp
+    fp = io.open(filepath, "w")
+    fp:write(filecontent)
+    fp:close()
+    luci.http.redirect(url..'?path='..uploaddir)
+
+    --[[luci.http.setfilehandler(
+        function(meta, chunk, eof)
+            uci.http.write('open '..filepath)
+            if not fp then
+                if meta and meta.name == 'upload-file' then
+                    --luci.http.write('open file '..filepath)
+                    fp = io.open(filepath, "w")
+                end
+            end
+            if fp and chunk then
+                --luci.http.write(chunk)
+                fp:write(chunk)
+            end
+            if fp and eof then
+                --luci.http.write('close')
+                fp:close()
+                luci.http.redirect(url..'?path='..uploaddir)
+            end
+        end
+    )]]--
+end
+
 function scandir(directory)
-    local http = require "luci.http"
     local i, t, popen = 0, {}, io.popen
     
     local pfile = popen("ls -l \""..directory.."\" | egrep '^d' ; ls -lh \""..directory.."\" | egrep -v '^d'")
